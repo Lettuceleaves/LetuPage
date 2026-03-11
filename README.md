@@ -43,7 +43,6 @@ LetuPage 是一个面向 Agent 的前端框架。这个 `README.md` 不是给最
 
 当前仓库已经有一版可运行 MVP，包含：
 
-- Vite + Vue 3 + TypeScript 基础工程
 - `main / session / page / interaction` 基础运行时
 - 页面基类与 HTTP 交互基类
 - 收藏栏与 `localStorage` 持久化
@@ -51,16 +50,11 @@ LetuPage 是一个面向 Agent 的前端框架。这个 `README.md` 不是给最
 - 导航栏最多展示 10 个页面
 - 超出后通过展开面板展示全部页面
 - 示例页面和示例交互弹窗
-- 开发环境中的 mock HTTP 接口
 
 当前演示入口：
 
 - [src/App.vue](/E:/projects/LetuPage/src/App.vue)
 - [src/page/views/DemoWorkbenchPageView.vue](/E:/projects/LetuPage/src/page/views/DemoWorkbenchPageView.vue)
-
-开发环境 mock 接口位置：
-
-- [vite.config.ts](/E:/projects/LetuPage/vite.config.ts)
 
 ## 4. 目录怎么理解
 
@@ -159,57 +153,3 @@ src/
 - [FavoritesBar.vue](/E:/projects/LetuPage/src/components/layout/FavoritesBar.vue)
 - [PageNavBar.vue](/E:/projects/LetuPage/src/components/layout/PageNavBar.vue)
 - [PageOverflowPanel.vue](/E:/projects/LetuPage/src/components/layout/PageOverflowPanel.vue)
-
-## 9. 运行项目
-
-对于 Agent，默认工作方式不是先执行构建，而是先判断开发环境是否已经启动。
-
-推荐顺序如下：
-
-1. 先检查当前项目是否已经有开发进程在运行
-2. 如果已经启动，不要重复执行构建或重复启动服务
-3. 如果已经启动，你只需要按照框架规则对页面做 CRUD
-4. 页面修改后会自动热更新并渲染
-5. 只有在需要验证产物或排查构建问题时，才执行 `npm run build`
-
-优先安装依赖：
-
-```bash
-npm install
-```
-
-优先使用开发模式：
-
-```bash
-npm run dev
-```
-
-对 Agent 的实际含义：
-
-- `npm run dev` 是默认工作入口
-- 不要把 `npm run build` 当成日常开发入口
-- 在 dev 已经运行时，重点是修改页面、会话、交互和组件
-- 页面被增删改后，前端会自动重新渲染，不需要手动重复构建
-
-如果需要先判断是否已经启动，再决定是否执行 `npm run dev`。
-
-类型检查：
-
-```bash
-npm run typecheck
-```
-
-只在必要时执行生产构建：
-
-```bash
-npm run build
-```
-
-更适合 Agent 的理解方式是：
-
-- 日常开发：检查是否已启动，已启动就直接改页面
-- 默认命令：`npm run dev`
-- 校验命令：`npm run typecheck`
-- 产物验证命令：`npm run build`
-
-在没有特殊原因时，提交前至少跑 `npm run typecheck`。如果需要确认生产产物，再跑 `npm run build`。
