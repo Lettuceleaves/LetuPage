@@ -27,16 +27,14 @@ LetuPage 是一个面向 Agent 的前端框架。这个 `README.md` 不是给最
 进入本项目后，优先阅读：
 
 1. [design-doc.md](/E:/projects/LetuPage/design-doc.md)
-2. [git-skill.md](/E:/projects/LetuPage/git-skill.md)
-3. [src/main/bootstrap.ts](/E:/projects/LetuPage/src/main/bootstrap.ts)
-4. [src/session/runtime/session-manager.ts](/E:/projects/LetuPage/src/session/runtime/session-manager.ts)
-5. [src/page/base/BasePage.ts](/E:/projects/LetuPage/src/page/base/BasePage.ts)
-6. [src/interaction/adapters/http-client.ts](/E:/projects/LetuPage/src/interaction/adapters/http-client.ts)
+2. [src/main/bootstrap.ts](/E:/projects/LetuPage/src/main/bootstrap.ts)
+3. [src/session/runtime/session-manager.ts](/E:/projects/LetuPage/src/session/runtime/session-manager.ts)
+4. [src/page/base/BasePage.ts](/E:/projects/LetuPage/src/page/base/BasePage.ts)
+5. [src/interaction/adapters/http-client.ts](/E:/projects/LetuPage/src/interaction/adapters/http-client.ts)
 
 理解顺序：
 
 - 先看设计目标和边界
-- 再看 Git 规范
 - 再看运行时入口
 - 再看会话和页面管理
 - 最后看页面基类和 HTTP 交互方式
@@ -189,15 +187,3 @@ npm run build
 ```
 
 在没有特殊原因时，提交前至少跑 `npm run typecheck`。如果条件允许，最好再跑一次 `npm run build`。
-
-## 10. 修改时必须遵守的 Git 规则
-
-本项目的 Git 规则写在 [git-skill.md](/E:/projects/LetuPage/git-skill.md)。
-
-最低要求：
-
-- 不要把无关改动混进一个提交
-- 文档和代码尽量按逻辑拆分提交
-- commit message 使用 `type(scope): summary`
-- 用户没有明确要求时，不主动 `git push`
-- 用户没有明确要求时，不改写历史
