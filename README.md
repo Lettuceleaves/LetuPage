@@ -51,14 +51,14 @@ LetuPage 是一个面向 Agent 的前端框架。这个 `README.md` 不是给最
 - 导航栏最多展示 10 个页面
 - 超出后通过展开面板展示全部页面
 - 示例页面和示例交互弹窗
-- 开发环境中的 mock HTTP 接口
+- 开发环境内置的演示 HTTP 响应逻辑
 
 当前演示入口：
 
 - [src/App.vue](/E:/projects/LetuPage/src/App.vue)
 - [src/page/views/DemoWorkbenchPageView.vue](/E:/projects/LetuPage/src/page/views/DemoWorkbenchPageView.vue)
 
-开发环境 mock 接口位置：
+开发环境演示 HTTP 响应逻辑位置：
 
 - [vite.config.ts](/E:/projects/LetuPage/vite.config.ts)
 
