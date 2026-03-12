@@ -68,9 +68,10 @@ export class SessionManager {
         type: "demo-workbench",
         title,
         payload: {
-          description: `${title} 页面用于演示 main / session / page 的运行时组织、收藏和 HTTP 交互回传。`,
-          tags: ["session", "page", "http", index % 2 === 0 ? "favorite" : "flow"],
-          endpoint: `/api/session/${sessionId}/page/demo-${index + 1}/interaction/dialog-form`,
+          description: `${title} 页面用于演示独立 bridge、session 内 page CRUD、日志回传与等待 Agent 后续改页的流程。`,
+          tags: ["session", "page", "bridge", index % 2 === 0 ? "favorite" : "flow"],
+          endpoint: "http://127.0.0.1:8080/submit",
+          healthEndpoint: "http://127.0.0.1:8080/health",
           accent: index % 3
         },
         meta: {
@@ -300,4 +301,7 @@ export class SessionManager {
     this.eventLog.splice(50);
   }
 }
+
+
+
 

@@ -5,7 +5,6 @@ import type { InteractionResponse, OpenPageInput } from "@/shared/types/runtime"
 export interface DemoSubmitPayload {
   title: string;
   detail: string;
-  mode: "close" | "keep" | "refresh";
 }
 
 export class DemoWorkbenchPage extends BasePage {
@@ -20,10 +19,7 @@ export class DemoWorkbenchPage extends BasePage {
   }
 
   async submitDialog(payload: DemoSubmitPayload) {
-    const response = await this.submitInteraction<
-      DemoSubmitPayload,
-      { echoedTitle?: string; echoedMode?: string; processedAt?: number }
-    >(
+    const response = await this.submitInteraction<DemoSubmitPayload, Record<string, never>>(
       "dialog-form",
       "submit",
       payload,

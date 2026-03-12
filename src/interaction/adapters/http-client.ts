@@ -21,7 +21,7 @@ export class InteractionHttpClient {
         body: JSON.stringify(input)
       });
 
-      const data = (await response.json()) as Partial<InteractionResponse<TResult>>;
+      const data = await this.readResponseBody<TResult>(response);
       return {
         code: response.status,
         action: this.resolveAction(response.status, data.action),
@@ -40,6 +40,18 @@ export class InteractionHttpClient {
     }
   }
 
+  async checkHealth(endpoint: string) {
+    try {
+      const response = await fetch(endpoint, {
+        method: "GET"
+      });
+
+      return response.ok;
+    } catch {
+      return false;
+    }
+  }
+
   private resolveAction(
     status: number,
     action?: InteractionAction
@@ -53,5 +65,25 @@ export class InteractionHttpClient {
     }
 
     return "keep";
+  }
+
+  private async readResponseBody<TResult>(
+    response: Response
+  ): Promise<Partial<InteractionResponse<TResult>>> {
+    const contentType = response.headers.get("Content-Type") ?? "";
+    const text = await response.text();
+    if (!text.trim()) {
+      return {};
+    }
+
+    if (!contentType.includes("application/json")) {
+      return {};
+    }
+
+    try {
+      return JSON.parse(text) as Partial<InteractionResponse<TResult>>;
+    } catch {
+      return {};
+    }
   }
 }

@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { computed, ref } from "vue";
+import { computed, onBeforeUnmount, onMounted, ref } from "vue";
+import { InteractionHttpClient } from "@/interaction/adapters/http-client";
 import type { RuntimePageRecord } from "@/shared/types/runtime";
 import type {
   DemoSubmitPayload,
@@ -12,40 +13,88 @@ const props = defineProps<{
 }>();
 
 const dialogOpen = ref(false);
-const submitMode = ref<DemoSubmitPayload["mode"]>("close");
 const title = ref(props.page.title);
 const detail = ref("");
-const feedback = ref("后端尚未返回结果。");
+const feedback = ref("bridge 尚未确认 ready。请先启动并保持独立 bridge 运行。");
 const lastStatus = ref<number | null>(null);
 const submitting = ref(false);
+const checkingBridge = ref(false);
+const bridgeReady = ref(false);
+const bridgeMessage = ref("未检查");
+const bridgeClient = new InteractionHttpClient();
+let bridgeTimer: ReturnType<typeof setInterval> | null = null;
 
 const tags = computed(() => {
   const value = props.page.payload.tags;
   return Array.isArray(value) ? value.map(String) : [];
 });
 
-async function handleSubmit() {
-  submitting.value = true;
-  const result = await props.controller.submitDialog({
-    title: title.value,
-    detail: detail.value,
-    mode: submitMode.value
-  });
+const submitEndpoint = computed(() =>
+  String(props.page.payload.endpoint ?? "http://127.0.0.1:8080/submit")
+);
+const healthEndpoint = computed(() =>
+  String(props.page.payload.healthEndpoint ?? "http://127.0.0.1:8080/health")
+);
 
-  lastStatus.value = result.code;
-  feedback.value = result.message ?? "后端未返回说明。";
-
-  if (result.action === "close") {
+async function refreshBridgeStatus() {
+  checkingBridge.value = true;
+  const ready = await bridgeClient.checkHealth(healthEndpoint.value);
+  bridgeReady.value = ready;
+  bridgeMessage.value = ready
+    ? "bridge ready，可开始交互并提交日志。"
+    : "bridge 未 ready，前端禁止发起交互提交。";
+  if (!ready) {
     dialogOpen.value = false;
-    props.controller.handleDialogClosed(result);
+  }
+  checkingBridge.value = false;
+}
+
+function openDialog() {
+  if (!bridgeReady.value) {
+    feedback.value = "bridge 未 ready，不能开始交互。";
+    return;
   }
 
-  if (result.action === "refresh") {
-    feedback.value = `${feedback.value} 页面内容已按约定刷新。`;
+  dialogOpen.value = true;
+}
+
+async function handleSubmit() {
+  if (!bridgeReady.value) {
+    feedback.value = "bridge 未 ready，提交被阻止。";
+    return;
+  }
+
+  submitting.value = true;
+  const payload: DemoSubmitPayload = {
+    title: title.value,
+    detail: detail.value
+  };
+  const result = await props.controller.submitDialog(payload);
+
+  lastStatus.value = result.code;
+  if (result.code >= 200 && result.code < 300) {
+    feedback.value = "交互已写入 bridge 日志。下一步应由 Agent 读取日志，再修改或新增 page。";
+    dialogOpen.value = false;
+    props.controller.handleDialogClosed(result);
+  } else {
+    feedback.value = result.message ?? "bridge 返回异常，交互保持打开。";
   }
 
   submitting.value = false;
 }
+
+onMounted(() => {
+  refreshBridgeStatus();
+  bridgeTimer = setInterval(() => {
+    refreshBridgeStatus();
+  }, 5000);
+});
+
+onBeforeUnmount(() => {
+  if (bridgeTimer) {
+    clearInterval(bridgeTimer);
+  }
+});
 </script>
 
 <template>
@@ -55,9 +104,24 @@ async function handleSubmit() {
         <p class="eyebrow">Demo Page</p>
         <h1>{{ page.title }}</h1>
       </div>
-      <button class="primary-button" type="button" @click="dialogOpen = true">
-        打开交互弹窗
-      </button>
+      <div class="header-actions">
+        <button
+          class="ghost-button"
+          type="button"
+          :disabled="checkingBridge"
+          @click="refreshBridgeStatus"
+        >
+          {{ checkingBridge ? "检查中..." : "检查 bridge" }}
+        </button>
+        <button
+          class="primary-button"
+          type="button"
+          :disabled="!bridgeReady || checkingBridge"
+          @click="openDialog"
+        >
+          {{ bridgeReady ? "开始交互" : "等待 bridge ready" }}
+        </button>
+      </div>
     </header>
 
     <section class="hero-card" :data-accent="String(page.payload.accent ?? 0)">
@@ -78,14 +142,17 @@ async function handleSubmit() {
       <div class="info-panel">
         <h3>当前约定</h3>
         <ul>
-          <li>交互通过 HTTP POST 回传后端。</li>
-          <li>后端可以用响应码和 action 决定弹窗是否关闭。</li>
-          <li>页面被选中或被交互更新后会刷新最新修改时间。</li>
+          <li>bridge 未 ready 前，前端不能开始交互提交。</li>
+          <li>bridge 只接收原始结果并写入唯一日志。</li>
+          <li>bridge 提交成功后，只返回简单 200。</li>
+          <li>后续结果页或页面更新必须由 Agent 读取日志后完成。</li>
         </ul>
       </div>
       <div class="info-panel">
-        <h3>接口地址</h3>
-        <code>{{ String(page.payload.endpoint ?? "/api/...") }}</code>
+        <h3>Bridge 状态</h3>
+        <p>{{ bridgeMessage }}</p>
+        <p>health: <code>{{ healthEndpoint }}</code></p>
+        <p>submit: <code>{{ submitEndpoint }}</code></p>
       </div>
       <div class="info-panel">
         <h3>最近反馈</h3>
@@ -100,7 +167,7 @@ async function handleSubmit() {
           <header class="dialog-header">
             <div>
               <p class="eyebrow">Interaction</p>
-              <h2>提交到后端</h2>
+              <h2>提交原始结果到 bridge</h2>
             </div>
             <button class="icon-button" type="button" @click="dialogOpen = false">
               ×
@@ -109,7 +176,7 @@ async function handleSubmit() {
 
           <label class="field">
             <span>标题</span>
-            <input v-model="title" type="text" placeholder="留空会触发 422 并保持打开" />
+            <input v-model="title" type="text" placeholder="输入本次交互标题" />
           </label>
 
           <label class="field">
@@ -117,17 +184,8 @@ async function handleSubmit() {
             <textarea
               v-model="detail"
               rows="4"
-              placeholder="这里的内容会随请求一起 POST 给后端"
+              placeholder="这里的内容会作为原始结果写入 bridge 日志"
             />
-          </label>
-
-          <label class="field">
-            <span>后端动作</span>
-            <select v-model="submitMode">
-              <option value="close">200 + close</option>
-              <option value="keep">200 + keep</option>
-              <option value="refresh">200 + refresh</option>
-            </select>
           </label>
 
           <footer class="dialog-footer">
@@ -137,10 +195,10 @@ async function handleSubmit() {
             <button
               class="primary-button"
               type="button"
-              :disabled="submitting"
+              :disabled="submitting || !bridgeReady"
               @click="handleSubmit"
             >
-              {{ submitting ? "提交中..." : "发送到后端" }}
+              {{ submitting ? "提交中..." : "写入 bridge 日志" }}
             </button>
           </footer>
         </div>
